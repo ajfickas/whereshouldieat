@@ -1,0 +1,12 @@
+version: '3'
+services:
+  web:
+    # TODO: Consider moving all web container source under `./web`.
+    build: .
+    env_file: .env
+    ports:
+      - "5100:5100"
+      - "3100:3100"
+    # Map development directory to directory in container
+    volumes:
+      - .:/usr/src/app
