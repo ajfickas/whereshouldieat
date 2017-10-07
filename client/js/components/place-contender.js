@@ -25,15 +25,22 @@ class PlaceContender extends React.Component {
         {this.renderName()}
         {this.renderAddress()}
         {this.renderDescription()}
+        {this.renderQuestion()}
         {this.renderYesButton()}
         {this.renderNoButton()}
       </div>
     );
   }
 
+  renderQuestion() {
+    return (
+      <div className="question">How about here?</div>
+    );
+  }
+
   renderNoButton() {
     return (
-      <div className="no-button" onClick={() => this.props.onNo(this.props.place)} role="button">✗ No, pass.</div>
+      <div className="no-button" onClick={() => this.props.onNo(this.props.place)} role="button">✗ No, next...</div>
     );
   }
 
