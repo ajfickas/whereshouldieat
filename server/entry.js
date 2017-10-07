@@ -44,10 +44,14 @@ const renderHtmlDocument = function () {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
               rel="stylesheet">
-        <link href="/assets/app.css" rel="stylesheet">
+        <link href="/assets/client.css" rel="stylesheet">
+        <link href='https://api.mapbox.com/mapbox-gl-js/v0.40.0/mapbox-gl.css' rel='stylesheet' />
       </head>
       <body>
-        <div id="root-container"></div>
+        <div id="app-container">
+          <div id="map-container"></div>
+          <div id="root-container"></div>
+        </div>
         <script src="/assets/client.js"></script>
       </body>
     </html>

@@ -1,109 +1,130 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import mapboxgl from 'mapbox-gl/dist/mapbox-gl.js';
 
 import tomo from '../api/tomo';
 
+import PlaceContender from './place-contender';
+
 class Root extends React.Component {
+
+  // Lifecycle
 
   constructor() {
     super();
 
     this.state = {
-      mostRelevantPlace: null,
-      places: null,
+      contendingPlace: null,
       maybePlaces: {},
       noPlaces: {},
+      places: null,
+      resolvingLocation: true,
       userCoordinates: null,
-      yesPlace: null,
+      winningPlace: null,
     };
   }
 
-  // Event handling
+  componentDidMount() {
+    // Initialize map
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYWpmaWNrYXMiLCJhIjoiY2o4Z2hwM2ZkMGNmYTMzbzZtcmsybjdudyJ9._QpOdx5jMTfsHD1uCKzSOg';
+    var map = new mapboxgl.Map({
+      container: 'map-container',
+      style: 'mapbox://styles/mapbox/light-v9'
+    });
 
-  handleStartClick() {
-    console.log('DEBUG: Root: handleStartClick');
     navigator.geolocation.getCurrentPosition((position) => {
       const userCoordinates = [position.coords.longitude, position.coords.latitude];
       this.setState({
+        resolvingLocation: false,
         userCoordinates,
       });
 
       // Fetch places
-      console.log('DEBUG: Root: handleStartClick: fetching places');
       const request = tomo.search({
         center: userCoordinates,
+        limit: 50,
         radius: 16093, // ~10 miles in meters.
-        // TODO: tags
+        tags: 'food-drink,!grocery-store',
       });
       request.promise.then((response) => {
-        console.log('DEBUG: Root: handleStartClick: fetched places');
+        const places = response.data;
+        // TODO: DEBUGGING
+        window.places = places;
         this.setState({
-          places: response.data,
+          contendingPlaceIndex: 0,
+          places: places,
         });
       }, (error) => {
         console.log('Error fetching places: request, error: ', request, error);
       });
     }, (error) => {
-      console.log('TODO: Root: handleStartClick: error getting current position: error: ', error);
+      this.setState({
+        resolvingLocation: false,
+      });
     });
+  }
+
+  // Event handling
+
+  handleYes(place) {
+    this.setState({
+      winningPlace: place,
+    });
+  }
+
+  handleNo(place) {
+    const contendingPlaceIndex = this.state.contendingPlaceIndex + 1;
+    if (contendingPlaceIndex < this.state.places.length) {
+      this.setState({
+        contendingPlaceIndex: this.state.contendingPlaceIndex + 1,
+      });
+    } else {
+      throw new Error('Ran out of places to show: contendingPlaceIndex: ', contendingPlaceIndex);
+    }
   }
 
   // Rendering
 
   render() {
-    if (!this.state.userCoordinates) {
-      return this.renderStart();
+    return (
+      <div className="root">
+        {this.renderContent()}
+      </div>
+    );
+  };
+
+  renderContent() {
+    if (this.state.resolvingLocation) {
+      return this.renderFindingLocation();
     } else if (!this.state.places) {
       return this.renderFindingPlaces();
+    } else if (this.state.contendingPlaceIndex !== null) {
+      return this.renderContendingPlace();
     } else {
-      return this.renderApp();
+      throw new Error('Unknown rendering state');
     }
   }
 
-  renderStart() {
+  renderFindingLocation() {
     return (
-      <div
-        onClick={() => {
-          this.handleStartClick();
-        }}
-        role="button"
-      >Help me find a place to eat.</div>
+      <div className="finding-location">Finding your location...</div>
     );
   }
 
   renderFindingPlaces() {
     return (
-      <div>Finding places...</div>
+      <div className="finding-places">Finding places...</div>
     );
   }
 
-  renderApp() {
+  renderContendingPlace() {
+    const contendingPlace = this.state.places[this.state.contendingPlaceIndex];
     return (
-      <div>{JSON.stringify(this.state.places)}</div>
-      // <div>
-      //   <Panel
-      //     onMaybe={() => {
-      //       console.log('TODO: Root: onMaybe');
-      //       // TODO: Add place to maybes and show next most relavant place.
-      //     }}
-      //     onNo={(place) => {
-      //       console.log('TODO: Root: onNo');
-      //       // TODO: Add place to nos and show next most relavant place.
-      //     }}
-      //     onYes={(place) => {
-      //       console.log('TODO: Root: onYes');
-      //       alert(`${place.name} it is. Enjoy!`);
-      //     }}
-      //     place={this.state.mostRelevantPlace}
-      //   />
-      //   <Map
-      //     onPlaceClick={() => {
-      //       // TODO: Show place in panel
-      //     }}
-      //     places={this.state.places}
-      //     userCoordinates={this.state.userCoordinates}
-      //   />
-      // </div>
+      <PlaceContender
+        onNo={(place) => this.handleNo(place)}
+        onYes={(place) => this.handleYes(place)}
+        place={contendingPlace}
+      />
     );
   }
 }
